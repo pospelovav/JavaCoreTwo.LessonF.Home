@@ -35,12 +35,14 @@ public class ClientGUI extends JFrame implements ActionListener,
     private final JList<String> userList = new JList<>();
     private boolean shownIoErrors = false;
     private SocketThread socketThread;
+    private Socket socket;
 
     private ClientGUI() {
         Thread.setDefaultUncaughtExceptionHandler(this);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setSize(WIDTH, HEIGHT);
+        setTitle("Chat (JAVA TWO)");
         log.setEditable(false);
         log.setLineWrap(true);
         JScrollPane scrollLog = new JScrollPane(log);
@@ -53,6 +55,7 @@ public class ClientGUI extends JFrame implements ActionListener,
         btnSend.addActionListener(this);
         tfMessage.addActionListener(this);
         btnLogin.addActionListener(this);
+        btnDisconnect.addActionListener(this);
 
         panelTop.add(tfIPAddress);
         panelTop.add(tfPort);
@@ -69,6 +72,7 @@ public class ClientGUI extends JFrame implements ActionListener,
         add(panelTop, BorderLayout.NORTH);
         add(panelBottom, BorderLayout.SOUTH);
 
+        btnDisconnect.setVisible(false);
         setVisible(true);
     }
 
@@ -90,6 +94,8 @@ public class ClientGUI extends JFrame implements ActionListener,
             sendMessage();
         } else if (src == btnLogin) {
             connect();
+        } else if (src == btnDisconnect){
+            disconnect();
         } else {
             showException(Thread.currentThread(), new RuntimeException("Unknown action source: " + src));
         }
@@ -97,10 +103,33 @@ public class ClientGUI extends JFrame implements ActionListener,
 
     private void connect() {
         try {
-            Socket socket = new Socket(tfIPAddress.getText(), Integer.parseInt(tfPort.getText()));
+            socket = new Socket(tfIPAddress.getText(), Integer.parseInt(tfPort.getText()));
             socketThread = new SocketThread("Client", this, socket);
+            tfLogin.setVisible(false);
+            tfPort.setVisible(false);
+            tfIPAddress.setVisible(false);
+            tfPassword.setVisible(false);
+            btnLogin.setVisible(false);
+            btnDisconnect.setVisible(true);
+
         } catch (IOException e) {
             showException(Thread.currentThread(), e);
+        }
+
+    }
+
+    private void disconnect() {
+        tfLogin.setVisible(true);
+        tfPort.setVisible(true);
+        tfIPAddress.setVisible(true);
+        tfPassword.setVisible(true);
+        btnLogin.setVisible(true);
+        btnDisconnect.setVisible(false);
+        socketThread.interrupt();
+        try {
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
     }
